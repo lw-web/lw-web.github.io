@@ -1,0 +1,103 @@
+1、路由守卫
+	在mian.js文件中监听路由，判断是否非登录
+		如果adminData.id不存在，跳转到login页面
+		如果adminData已经存在，不对路由做阻拦	
+	watch:{
+		$route(to){
+		  if(to.path.toLowerCase()!='/login'){
+			if(typeof(store.state.adminData.id)=='undefined'){
+			  router.push('/login')
+			  return
+			}
+		  }
+		}
+	}
+
+2、login页面
+	完成用户登录信息的收集，当用户点击提交
+		发送axios请求，获取token，并保存到store
+		再次发送axios请求
+			params参数：username、userpassword
+			在headers中带上token
+			获取adminData、roleData、moduleData信息
+			调用this.$store.commit中的appInit方法，将获取信息保存到store
+			
+3、vuex信息持久化
+	在store文件夹下的index.js文件中引入vuex-persistedstate插件
+		在创建store实例时，添加配置项
+		完成插件引入配置之后，vuex中保存的信息就会自动存储到sessionStorage中，解决了页面刷新时数据的持久化
+	plugins: [
+		createPersistedState({
+		  storage: window.sessionStorage
+		})
+	]
+
+4、动态路由挂载
+	在main.js文件中，遍历store中的moduleData数组，通过匹配moduleData数组中每一项的相关属性，创建动态路由
+	{
+		path:moduleData[i]['modulepath'],
+		name:moduleData[i]['modulepath'].replace(/\//img,''),
+		components:{[viewname]:resolve=>require(['@/view/'+viewpath],resolve)},
+		meta:{
+		  id:moduleData[i]['id'],
+		  title:moduleData[i]['modulename'],
+		  display:moduleData[i]['display']
+		}
+	}
+	然后，通过router.addRoutes(routeData)方法将创建的所有动态路由挂载
+	
+5、动态创建index页面导航栏
+	在index文件夹下的index.js的created钩子函数中获取导航栏数据：this.headerNav=this.$store.state.moduleData
+	通过v-for="item in headerNav" 动态渲染导航栏
+	
+6、创建路由中配置的组件
+	按照路由配置中的组件路径：['@/view/'+viewpath]创建需求的组件
+	例如，我的路由配置中，role相关的组件路径如下：
+		role/Index.vue
+		role/Create.vue
+		role/Modify.vue
+		role/Delete.vue 
+		我就需要在role文件加下创建Index.vue、Create.vue、Modify.vue、Delete.vue四个组件
+		
+7、创建role相关组件
+	在role文件夹下的Index.js的created钩子函数中发送axios请求（/api/role/getdata/），获取roleData和分页数据
+	根据roleData角色信息和分页数据渲染table表格和分页组件
+	
+8、创建编辑按钮公用组件
+	在组件created钩子函数中通过当前路由地址获取编辑按钮数据actionGroup
+	const currentPath=this.$route.path
+	for(let i in this.$store.state.moduleData){
+	  if(this.$store.state.moduleData[i].modulepath==currentPath){
+		this.actionGroup=this.$store.state.moduleData[i]['children']
+		break
+	  }
+	}
+	通过actionGroup动态渲染编辑按钮组
+	通过父组件传递过来的信息，在按钮点击事件中完成编辑操作的初步校验
+		删除（至少选一项）、编辑（只能选一项）、新增
+
+9、创建编辑操作弹窗组件
+	role/Create.vue组件中，在created钩子函数中通过父组件传过来的id获取角色权限信息
+	渲染新增弹窗页面
+	当弹窗表单完成校验，执行提交操作时，发送axios的post请求，提交数据到/api/role/create
+	role/Delete.vue 组建中，在created钩子函数中通过父组件传过来的要删除项的id数组
+	确定删除时，发送axios的delete请求，提交删除项的id到/api/role/delete
+	
+10、创建admin相关组件
+	在admin文件夹下的Index.js的created钩子函数中发送axios请求（/api/admin/getdata/），获取roleData和分页数据
+	根据roleData角色信息和分页数据渲染table表格和分页组件
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		
